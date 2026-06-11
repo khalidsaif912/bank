@@ -1,0 +1,11 @@
+{
+  "name": "محلل رسائل البنك",
+  "short_name": "البنك",
+  "description": "تحليل رسائل البنك - إيداعات وخصومات وسحوبات",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#047857",
+  "dir": "rtl",
+  "lang": "ar"
+}
