@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { BankInfo } from '../parser/bankDetector'
 
 interface Props {
@@ -7,8 +8,36 @@ interface Props {
 }
 
 export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
+  const [shareTip, setShareTip] = useState<string | null>(null)
   const accent = bank?.accent ?? '#047857'
   const accentLight = bank?.accentLight ?? '#059669'
+
+  const handleShare = async () => {
+    const url = window.location.href
+    const title = bank?.nameAr ?? 'محلل رسائل البنك'
+    const text = 'تطبيق لتحليل رسائل البنك وتتبع الإيداعات والخصومات'
+
+    const showTip = (msg: string) => {
+      setShareTip(msg)
+      setTimeout(() => setShareTip(null), 2500)
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url })
+        return
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url)
+      showTip('تم نسخ الرابط')
+    } catch {
+      showTip('تعذر المشاركة')
+    }
+  }
 
   return (
     <header
@@ -40,9 +69,7 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
           <div className="flex-1 min-w-0 flex items-center gap-3">
             {bank ? (
               <>
-                <div
-                  className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/30 shadow-inner"
-                >
+                <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/30 shadow-inner">
                   <span className="text-lg font-bold">
                     {(bank.nameAr.replace(/^بنك\s*/, '').charAt(0) ||
                       bank.nameAr.charAt(0)).toUpperCase()}
@@ -72,10 +99,21 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
             )}
           </div>
 
-          <div className="w-10 shrink-0 flex justify-center">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm border border-white/20">
-              🏦
-            </div>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm transition-colors text-lg"
+              aria-label="مشاركة التطبيق"
+              title="مشاركة"
+            >
+              ↗
+            </button>
+            {shareTip && (
+              <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap text-[10px] bg-black/70 text-white px-2 py-1 rounded-lg">
+                {shareTip}
+              </span>
+            )}
           </div>
         </div>
       </div>

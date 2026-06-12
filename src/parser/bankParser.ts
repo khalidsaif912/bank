@@ -15,6 +15,8 @@ const MONTHS: Record<string, string> = {
   DEC: '12',
 }
 
+const CURRENCY = '(?:ر\\.?\\s*ع\\.?|OMR)\\s*'
+
 function normalizeText(text: string): string {
   return text
     .replace(/\u0640/g, '')
@@ -31,10 +33,15 @@ function parseAmount(raw: string): number {
 }
 
 function extractBalance(text: string): number | null {
-  const match = text.match(
-    /الرصيد\s*المتوفر\s*(?:هو\s*)?(?:ر\.?\s*ع\.?\s*)?([\d.,]+)/i,
-  )
-  return match ? parseAmount(match[1]) : null
+  const patterns = [
+    /الرصيد\s*المتوفر\s*(?:هو\s*)?(?:ر\.?\s*ع\.?|OMR)?\s*([\d.,]+)/i,
+    /رصيدك\s*الا?ن\s*(?:OMR|ر\.?\s*ع\.?)?\s*([\d.,]+)/i,
+  ]
+  for (const pattern of patterns) {
+    const match = text.match(pattern)
+    if (match) return parseAmount(match[1])
+  }
+  return null
 }
 
 function extractReference(text: string): string | null {
@@ -76,6 +83,18 @@ function parseDateTime(text: string): { date: string | null; time: string | null
     return {
       date: `${year}-${month}-${day.padStart(2, '0')}`,
       time: time ?? null,
+    }
+  }
+
+  const omrDateMatch = text.match(
+    /(\d{1,2})-(\d{1,2})\s+(\d{4})\s+(\d{2}:\d{2})(?::\d{2})?/,
+  )
+  if (omrDateMatch) {
+    const [, day, month, year, time] = omrDateMatch
+    const fullTime = time.length === 5 ? `${time}:00` : time
+    return {
+      date: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
+      time: fullTime,
     }
   }
 
@@ -154,7 +173,9 @@ function parseDeposit(line: string, index: number): ParsedTransaction | null {
   if (!/(?:تم\s*)?ا?يداع/i.test(line)) return null
   if (/راتب/i.test(line)) return null
 
-  const amountMatch = line.match(/(?:تم\s*)?ا?يداع\s*(?:ر\.?\s*ع\.?\s*)?([\d.,]+)/i)
+  const amountMatch = line.match(
+    new RegExp(`(?:تم\\s*)?ا?يداع\\s*${CURRENCY}?([\\d.,]+)`, 'i'),
+  )
   if (!amountMatch) return null
 
   const amount = parseAmount(amountMatch[1])
@@ -189,7 +210,9 @@ function parseDeposit(line: string, index: number): ParsedTransaction | null {
 function parseWithdrawal(line: string, index: number): ParsedTransaction | null {
   if (!/تم\s*سحب/i.test(line)) return null
 
-  const amountMatch = line.match(/تم\s*سحب\s*(?:ر\.?\s*ع\.?\s*)?([\d.,]+)/i)
+  const amountMatch = line.match(
+    new RegExp(`تم\\s*سحب\\s*${CURRENCY}?([\\d.,]+)`, 'i'),
+  )
   if (!amountMatch) return null
 
   const amount = parseAmount(amountMatch[1])
@@ -210,7 +233,7 @@ function parseWithdrawal(line: string, index: number): ParsedTransaction | null 
   }
 
   const fromMatch = line.match(
-    /تم\s*سحب\s*(?:ر\.?\s*ع\.?\s*)?[\d.,]+\s*من\s+(.+?)(?:\s+في\s|\s+الرصيد|$)/i,
+    new RegExp(`تم\\s*سحب\\s*${CURRENCY}?[\\d.,]+\\s*من\\s+(.+?)(?:\\s+في\\s|\\s+الرصيد|$)`, 'i'),
   )
   if (fromMatch) {
     return buildTransaction(line, index, {
@@ -240,7 +263,7 @@ function parseDebit(line: string, index: number): ParsedTransaction | null {
   if (/التحويل\s*الداخلي/i.test(line)) return null
 
   const amountMatch = line.match(
-    /(?:تم\s*)?(?:ال)?خصم\s*(?:ر\.?\s*ع\.?\s*)?([\d.,]+)/i,
+    new RegExp(`(?:تم\\s*)?(?:ال)?خصم\\s*${CURRENCY}?([\\d.,]+)`, 'i'),
   )
   if (!amountMatch) return null
 
@@ -251,12 +274,20 @@ function parseDebit(line: string, index: number): ParsedTransaction | null {
   const merchantMatch = line.match(
     /(?:من\s*)?(?:حساب(?:ك)?\s*)?رقم\s+(.+?)(?:\s+في\s|\s+\d{1,2}[-/]\d|\s+الرصيد|$)/i,
   )
+  const accountMatch = line.match(/من\s+حساب(?:ك)?\s+(\S+)\s+في/i)
+
+  let counterparty = 'خصم'
+  if (merchantMatch) {
+    counterparty = cleanName(merchantMatch[1])
+  } else if (accountMatch) {
+    counterparty = `حساب ${accountMatch[1]}`
+  }
 
   return buildTransaction(line, index, {
     type: 'debit',
     amount,
     balance,
-    counterparty: merchantMatch ? cleanName(merchantMatch[1]) : 'خصم',
+    counterparty,
     date,
     time,
     reference: null,
@@ -268,7 +299,7 @@ function parseInternalTransfer(line: string, index: number): ParsedTransaction |
   if (!/التحويل\s*الداخلي/i.test(line)) return null
 
   const amountMatch = line.match(
-    /(?:تم\s*)?(?:ال)?خصم\s*(?:ر\.?\s*ع\.?\s*)?([\d.,]+)/i,
+    new RegExp(`(?:تم\\s*)?(?:ال)?خصم\\s*${CURRENCY}?([\\d.,]+)`, 'i'),
   )
   if (!amountMatch) return null
 
@@ -296,11 +327,27 @@ function parseLine(raw: string, index: number): ParsedTransaction | null {
   )
 }
 
+function mergeMessageLines(lines: string[]): string[] {
+  const merged: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]
+    const next = lines[i + 1]?.trim()
+    if (next && /^رصيدك\s*(?:الآن|الان)/i.test(next)) {
+      line = `${line} ${next}`
+      i++
+    }
+    merged.push(line)
+  }
+  return merged
+}
+
 export function parseBankMessages(text: string): ParseResult {
-  const lines = text
-    .split(/\n+/)
-    .map((l) => l.trim())
-    .filter(Boolean)
+  const lines = mergeMessageLines(
+    text
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean),
+  )
 
   const transactions: ParsedTransaction[] = []
   const skipped: string[] = []

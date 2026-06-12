@@ -42,4 +42,21 @@ describe('bankParser', () => {
     const loan = transactions.find((t) => t.type === 'loan')
     expect(loan?.amount).toBe(105.797)
   })
+
+  it('parses OMR format with split balance line', () => {
+    const text = `تم خصم OMR 30.000 من حسابك 017**1058 في 11-06 2026 19:40.
+رصيدك الآنOMR 106.148.`
+    const { transactions, failed } = parseBankMessages(text)
+
+    expect(failed.length).toBe(0)
+    expect(transactions.length).toBe(1)
+
+    const tx = transactions[0]
+    expect(tx.type).toBe('debit')
+    expect(tx.amount).toBe(30)
+    expect(tx.balance).toBe(106.148)
+    expect(tx.counterparty).toContain('017**1058')
+    expect(tx.date).toBe('2026-06-11')
+    expect(tx.time).toBe('19:40:00')
+  })
 })
