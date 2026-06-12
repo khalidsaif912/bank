@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { BankTheme } from './components/BankTheme'
 import { FilterTabs, TabStatsSummary } from './components/FilterTabs'
 import { HeaderBanner } from './components/HeaderBanner'
 import { PastePanel } from './components/PastePanel'
@@ -81,13 +82,14 @@ function App() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <HeaderBanner
-          bank={bankInfo}
-          monthLabel={monthLabel}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
+        <BankTheme bank={bankInfo}>
+          <HeaderBanner
+            bank={bankInfo}
+            monthLabel={monthLabel}
+            onMenuClick={() => setSidebarOpen(true)}
+          />
 
-        <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-4 space-y-4 safe-bottom">
+          <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-4 space-y-4 safe-bottom">
           <SummaryCards summary={summary} showBalance={settings.showBalance} />
 
           <PastePanel onParse={handleParse} lastInfo={lastParseInfo} />
@@ -128,7 +130,8 @@ function App() {
             showBalance={settings.showBalance}
             showReference={settings.showReference}
           />
-        </main>
+          </main>
+        </BankTheme>
       </div>
     </div>
   )

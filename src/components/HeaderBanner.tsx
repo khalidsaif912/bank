@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { BankInfo } from '../parser/bankDetector'
+import type { BankInfo } from '../data/omanBanks'
+import { getBankLogoUrl } from '../data/omanBanks'
 
 interface Props {
   bank: BankInfo | null
@@ -46,6 +47,15 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
         background: `linear-gradient(135deg, ${accent} 0%, ${accentLight} 55%, ${accent}dd 100%)`,
       }}
     >
+      {bank?.logoFile && (
+        <img
+          src={getBankLogoUrl(bank.logoFile)}
+          alt=""
+          className="absolute -left-6 -bottom-4 w-28 h-28 opacity-15 object-contain pointer-events-none"
+          draggable={false}
+        />
+      )}
+
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
@@ -69,11 +79,19 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
           <div className="flex-1 min-w-0 flex items-center gap-3">
             {bank ? (
               <>
-                <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/30 shadow-inner">
-                  <span className="text-lg font-bold">
-                    {(bank.nameAr.replace(/^بنك\s*/, '').charAt(0) ||
-                      bank.nameAr.charAt(0)).toUpperCase()}
-                  </span>
+                <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shrink-0 border border-white/40 shadow-md overflow-hidden p-1">
+                  {bank.logoFile ? (
+                    <img
+                      src={getBankLogoUrl(bank.logoFile)}
+                      alt={bank.nameAr}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-lg font-bold text-slate-700">
+                      {(bank.nameAr.replace(/^بنك\s*/, '').charAt(0) ||
+                        bank.nameAr.charAt(0)).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div className="min-w-0 text-right">
                   <h1 className="text-base font-bold leading-tight truncate">

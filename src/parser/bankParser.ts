@@ -136,7 +136,7 @@ function isJunkLine(line: string): boolean {
 
 function parseSalary(line: string, index: number): ParsedTransaction | null {
   const match = line.match(
-    /(?:تم\s*)?ا?يداع\s*راتب(?:ك)?\s*الشهري\s*([\d.,]+)/i,
+    /(?:تم\s*)?ا?يداع\s*(?:راتب(?:ك)?\s*الشهري|الراتب\s*الشهري)\s*(?:OMR|ر\.?\s*ع\.?)?\s*([\d.,]+)/i,
   )
   if (!match) return null
 
