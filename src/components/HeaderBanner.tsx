@@ -40,6 +40,12 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
     }
   }
 
+  const subtitle = bank
+    ? `${bank.nameEn}${monthLabel ? ` · ${monthLabel}` : ' · جميع الأشهر'}`
+    : monthLabel
+      ? monthLabel
+      : 'الصق رسائل الراتب لتحديد البنك تلقائياً'
+
   return (
     <header
       className="sticky top-0 z-20 text-white shadow-lg overflow-hidden"
@@ -51,7 +57,7 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
         <img
           src={getBankLogoUrl(bank.logoFile)}
           alt=""
-          className="absolute -left-6 -bottom-4 w-28 h-28 opacity-15 object-contain pointer-events-none"
+          className="absolute -left-8 -bottom-6 w-36 h-36 opacity-10 object-contain pointer-events-none"
           draggable={false}
         />
       )}
@@ -65,8 +71,8 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
         }}
       />
 
-      <div className="relative max-w-3xl mx-auto px-4 py-4">
-        <div className="flex items-center gap-3">
+      <div className="relative max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onMenuClick}
@@ -76,42 +82,43 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
             ☰
           </button>
 
-          <div className="flex-1 min-w-0 flex items-center gap-3">
+          <div className="flex-1 min-w-0 flex justify-center sm:justify-start">
             {bank ? (
-              <>
-                <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shrink-0 border border-white/40 shadow-md overflow-hidden p-1">
-                  {bank.logoFile ? (
+              <div className="flex items-center gap-2.5 sm:gap-3 bg-white/95 text-slate-800 rounded-2xl px-2.5 sm:px-4 py-2 sm:py-2.5 shadow-lg border border-white/50 min-w-0 max-w-full">
+                {bank.logoFile ? (
+                  <div className="shrink-0 w-11 h-11 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-white p-1 sm:p-1.5 shadow-inner ring-1 ring-black/5">
                     <img
                       src={getBankLogoUrl(bank.logoFile)}
                       alt={bank.nameAr}
-                      className="w-full h-full object-contain"
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
                     />
-                  ) : (
-                    <span className="text-lg font-bold text-slate-700">
-                      {(bank.nameAr.replace(/^بنك\s*/, '').charAt(0) ||
-                        bank.nameAr.charAt(0)).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0 text-right">
-                  <h1 className="text-base font-bold leading-tight truncate">
+                  </div>
+                ) : (
+                  <div
+                    className="shrink-0 w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-lg sm:text-xl font-bold text-white shadow-inner"
+                    style={{ background: `linear-gradient(135deg, ${accent}, ${accentLight})` }}
+                  >
+                    {(bank.nameAr.replace(/^بنك\s*/, '').charAt(0) ||
+                      bank.nameAr.charAt(0)).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1 text-right border-r-2 border-slate-100 pr-2.5 sm:pr-3">
+                  <h1 className="text-sm sm:text-base font-bold leading-tight truncate text-slate-900">
                     {bank.nameAr}
                   </h1>
-                  <p className="text-[11px] text-white/75 truncate mt-0.5">
-                    {bank.nameEn}
-                    {monthLabel ? ` · ${monthLabel}` : ' · جميع الأشهر'}
+                  <p className="text-[10px] sm:text-xs text-slate-500 truncate mt-0.5">
+                    {subtitle}
                   </p>
                 </div>
-              </>
+              </div>
             ) : (
-              <div className="min-w-0 text-right flex-1">
+              <div className="min-w-0 text-right flex-1 px-1">
                 <h1 className="text-base font-bold leading-tight">
                   محلل رسائل البنك
                 </h1>
-                <p className="text-[11px] text-white/75 mt-0.5">
-                  {monthLabel
-                    ? monthLabel
-                    : 'الصق رسائل الراتب لتحديد البنك تلقائياً'}
+                <p className="text-[11px] text-white/75 mt-0.5 truncate">
+                  {subtitle}
                 </p>
               </div>
             )}
@@ -128,7 +135,7 @@ export function HeaderBanner({ bank, monthLabel, onMenuClick }: Props) {
               ↗
             </button>
             {shareTip && (
-              <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap text-[10px] bg-black/70 text-white px-2 py-1 rounded-lg">
+              <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap text-[10px] bg-black/70 text-white px-2 py-1 rounded-lg z-30">
                 {shareTip}
               </span>
             )}
